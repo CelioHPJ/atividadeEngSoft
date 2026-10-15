@@ -1,36 +1,30 @@
-#Representa um pedido em um sistema de comércio eletrônico.
-#Lógica de cálculo de frete (precisa ser refatorada).
+# Representa um pedido em um sistema de comércio eletrônico.
+# No padrão Strategy, esta classe é o "Contexto": ela não sabe COMO o frete
+# é calculado, apenas guarda uma estratégia e delega o cálculo para ela.
 
-class Pedido:    
+from frete import EstrategiaFrete
+
+
+class Pedido:
 
     def __init__(self, peso_kg: float):
         self._peso_kg = peso_kg
-    
-    #Calcula o frete baseado no tipo de serviço.
-    #Se um novo tipo de frete for adicionado, esta classe precisará ser modificada (viola o Princípio Aberto/Fechado).
-    
-    def calcular_frete(self, tipo_servico: str) -> float:
-                
-        print(f"Calculando frete para: {tipo_servico}")        
-        servico = tipo_servico.upper()
+        # Estratégia de frete atual; começa vazia e é definida pelo cliente.
+        self._estrategia: EstrategiaFrete | None = None
 
-        if servico == "SEDEX":
-            return 10.0 + (self._peso_kg * 1.5)
-        
-        elif servico == "PAC":
-            return 5.0 + (self._peso_kg * 1.0)
-        
-        elif servico == "TRANSPORTADORA":
-            return 20.0 + (self._peso_kg * 3.0)
-        
-        elif servico == "MOTOBOY":
-            return 15.0
-        
-        else:
-            print(f"AVISO: Tipo de serviço '{tipo_servico}' desconhecido.")
-            return 0.0
+    # Setter: permite ao cliente escolher (injetar) a estratégia de frete.
+    # Pode ser trocada a qualquer momento, inclusive em tempo de execução.
+    def set_estrategia(self, estrategia: EstrategiaFrete) -> None:
+        self._estrategia = estrategia
 
-    # Propriedades (get's) para acesso seguro aos atributos
+    # Delega o cálculo para a estratégia definida, passando o próprio pedido.
+    # Substitui o antigo if/elif: o Pedido não precisa mudar quando surge um novo frete.
+    def calcular_frete(self) -> float:
+        if self._estrategia is None:
+            raise ValueError("Nenhuma estratégia de frete definida.")
+        return self._estrategia.calcular(self)
+
+    # Getter (somente leitura) do peso, usado pelas estratégias no cálculo.
     @property
     def peso_kg(self) -> float:
         return self._peso_kg
